@@ -1,0 +1,1479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scrollopedia</title>
+<link href="https://fonts.googleapis.com/css2?family=Linux+Libertine:wght@400;700&family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --wiki-white: #ffffff;
+    --wiki-bg: #0a0a0a;
+    --wiki-card: #141414;
+    --wiki-border: #2a2a2a;
+    --wiki-text: #e8e8e8;
+    --wiki-muted: #888;
+    --wiki-accent: #4a90d9;
+    --wiki-red: #ff4757;
+    --wiki-red-glow: rgba(255, 71, 87, 0.3);
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--wiki-bg);
+    color: var(--wiki-text);
+    font-family: 'Instrument Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Header */
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: linear-gradient(to bottom, rgba(10,10,10,0.95) 60%, transparent);
+    pointer-events: none;
+  }
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: auto;
+  }
+
+  .header-title {
+    font-family: 'Linux Libertine', 'Georgia', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--wiki-white);
+  }
+
+  .header-title span {
+    color: var(--wiki-muted);
+    font-weight: 400;
+  }
+
+  .header-right {
+    pointer-events: auto;
+  }
+
+  .likes-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    border-radius: 24px;
+    border: 1px solid var(--wiki-border);
+    background: rgba(255,255,255,0.06);
+    color: var(--wiki-white);
+    cursor: pointer;
+    font-family: 'Instrument Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.25s;
+    backdrop-filter: blur(12px);
+  }
+
+  .likes-tab-btn:hover {
+    background: rgba(255, 71, 87, 0.15);
+    border-color: rgba(255, 71, 87, 0.3);
+  }
+
+  .likes-tab-btn svg { color: var(--wiki-red); }
+
+  /* Likes Panel */
+  .likes-panel-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    z-index: 199;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s;
+  }
+
+  .likes-panel-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .likes-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 420px;
+    max-width: 92vw;
+    z-index: 200;
+    background: #111;
+    border-left: 1px solid var(--wiki-border);
+    transform: translateX(100%);
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .likes-panel.open {
+    transform: translateX(0);
+  }
+
+  .likes-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px;
+    border-bottom: 1px solid var(--wiki-border);
+    flex-shrink: 0;
+  }
+
+  .likes-panel-title {
+    font-family: 'Linux Libertine', 'Georgia', serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--wiki-white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .likes-panel-close {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.06);
+    color: var(--wiki-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+
+  .likes-panel-close:hover {
+    background: rgba(255,255,255,0.12);
+    color: var(--wiki-white);
+  }
+
+  .likes-panel-interests {
+    padding: 14px 24px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    border-bottom: 1px solid var(--wiki-border);
+    flex-shrink: 0;
+    min-height: 0;
+  }
+
+  .likes-panel-interests:empty {
+    display: none;
+  }
+
+  .interest-tag {
+    padding: 4px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 500;
+    background: rgba(74, 144, 217, 0.12);
+    color: var(--wiki-accent);
+    border: 1px solid rgba(74, 144, 217, 0.2);
+  }
+
+  .interest-tag-label {
+    font-size: 11px;
+    color: var(--wiki-muted);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  .likes-panel-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+  }
+
+  .likes-panel-list::-webkit-scrollbar { width: 4px; }
+  .likes-panel-list::-webkit-scrollbar-thumb { background: var(--wiki-border); border-radius: 4px; }
+
+  .likes-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 60px 20px;
+    text-align: center;
+  }
+
+  .likes-empty p {
+    color: var(--wiki-muted);
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .likes-empty span {
+    color: rgba(255,255,255,0.25);
+    font-size: 13px;
+  }
+
+  .liked-item {
+    display: flex;
+    gap: 14px;
+    padding: 14px;
+    border-radius: 14px;
+    transition: background 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  .liked-item:hover {
+    background: rgba(255,255,255,0.04);
+  }
+
+  .liked-item-img {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    object-fit: cover;
+    flex-shrink: 0;
+    background: var(--wiki-border);
+  }
+
+  .liked-item-placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Linux Libertine', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.15);
+  }
+
+  .liked-item-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+  }
+
+  .liked-item-title {
+    font-family: 'Linux Libertine', serif;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--wiki-white);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .liked-item-desc {
+    font-size: 12px;
+    color: var(--wiki-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .liked-item-remove {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: none;
+    color: var(--wiki-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    align-self: center;
+    transition: all 0.2s;
+  }
+
+  .liked-item-remove:hover {
+    background: rgba(255, 71, 87, 0.15);
+    color: var(--wiki-red);
+  }
+
+  /* Scroll container */
+  .scroll-container {
+    height: 100vh;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .cards-wrapper {
+    transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+    height: 100vh;
+  }
+
+  /* Card */
+  .card {
+    height: 100vh;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-bg {
+    position: absolute;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    filter: blur(40px) brightness(0.3) saturate(1.4);
+    transform: scale(1.2);
+    z-index: 0;
+  }
+
+  .card-inner {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 480px;
+    height: 85vh;
+    margin: 0 auto;
+    border-radius: 20px;
+    overflow: hidden;
+    background: var(--wiki-card);
+    border: 1px solid var(--wiki-border);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+  }
+
+  .card-image-wrap {
+    position: relative;
+    width: 100%;
+    flex: 0 0 55%;
+    overflow: hidden;
+    background: #1a1a1a;
+  }
+
+  .card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-image.loaded { opacity: 1; }
+
+  .card-image-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 1;
+  }
+
+  .placeholder-globe {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    inset: 0;
+  }
+
+  .card-image-placeholder .placeholder-letter {
+    font-family: 'Linux Libertine', 'Georgia', serif;
+    font-size: 120px;
+    font-weight: 700;
+    color: rgba(255,255,255,0.08);
+    z-index: 1;
+  }
+
+  .img-attribution {
+    position: absolute;
+    bottom: 8px;
+    right: 10px;
+    z-index: 5;
+    font-size: 10px;
+    color: rgba(255,255,255,0.45);
+    background: rgba(0,0,0,0.45);
+    padding: 3px 8px;
+    border-radius: 6px;
+    max-width: 70%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    line-height: 1.3;
+  }
+
+  .card-content {
+    flex: 1;
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .card-content::-webkit-scrollbar { width: 3px; }
+  .card-content::-webkit-scrollbar-thumb { background: var(--wiki-border); border-radius: 3px; }
+
+  .card-category {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--wiki-accent);
+    margin-bottom: 10px;
+  }
+
+  .card-title {
+    font-family: 'Linux Libertine', 'Georgia', serif;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--wiki-white);
+    margin-bottom: 14px;
+  }
+
+  .card-extract {
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--wiki-muted);
+    flex: 1;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--wiki-border);
+  }
+
+  .card-link {
+    font-size: 13px;
+    color: var(--wiki-accent);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+
+  .card-link:hover { color: #6aadff; }
+
+  /* Side actions */
+  .side-actions {
+    position: absolute;
+    right: 20px;
+    bottom: calc(7.5vh + 100px);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .action-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+    background: none;
+    border: none;
+    color: var(--wiki-white);
+    transition: transform 0.2s;
+  }
+
+  .action-btn:hover { transform: scale(1.15); }
+  .action-btn:active { transform: scale(0.95); }
+
+  .action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+  }
+
+  .action-btn.liked .action-icon {
+    background: var(--wiki-red);
+    box-shadow: 0 0 20px var(--wiki-red-glow);
+  }
+
+  .action-btn.liked .action-icon svg { fill: white; }
+
+  .action-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.6);
+  }
+
+  /* Nav hints */
+  .nav-hint {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.25);
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
+  .nav-hint-top { top: 70px; }
+  .nav-hint-bottom { bottom: 20px; }
+
+  .nav-hint svg { width: 14px; height: 14px; opacity: 0.4; }
+
+  /* Loading spinner */
+  .loader {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    z-index: 200;
+    background: var(--wiki-bg);
+    transition: opacity 0.4s;
+  }
+
+  .loader.hidden { opacity: 0; pointer-events: none; }
+
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--wiki-border);
+    border-top-color: var(--wiki-accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .loader-text {
+    font-size: 14px;
+    color: var(--wiki-muted);
+  }
+
+  /* Transition overlay */
+  .transition-indicator {
+    position: fixed;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 60;
+    width: 40px;
+    height: 4px;
+    border-radius: 2px;
+    background: var(--wiki-accent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .transition-indicator.up { top: 60px; }
+  .transition-indicator.down { bottom: 10px; }
+  .transition-indicator.active { opacity: 1; }
+
+  /* Article count badge */
+  .article-counter {
+    position: fixed;
+    bottom: 20px;
+    right: 24px;
+    z-index: 100;
+    font-size: 13px;
+    color: rgba(255,255,255,0.3);
+    font-variant-numeric: tabular-nums;
+    font-weight: 500;
+  }
+
+  .article-counter::before {
+    content: '#';
+    opacity: 0.5;
+    margin-right: 2px;
+  }
+
+  @media (max-width: 540px) {
+    .card-inner {
+      max-width: 100%;
+      height: 100vh;
+      border-radius: 0;
+      border: none;
+    }
+    .side-actions { right: 12px; bottom: 90px; }
+    .card-content { padding: 20px; }
+    .card-title { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="header-title">Scroll<span>opedia</span></div>
+  </div>
+  <div class="header-right">
+    <button class="likes-tab-btn" id="likesTabBtn" onclick="toggleLikesPanel()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      Liked
+    </button>
+  </div>
+</div>
+
+<!-- Likes Panel -->
+<div class="likes-panel" id="likesPanel">
+  <div class="likes-panel-header">
+    <h2 class="likes-panel-title">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="var(--wiki-red)" stroke="var(--wiki-red)" stroke-width="2">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      Liked Articles
+    </h2>
+    <button class="likes-panel-close" onclick="toggleLikesPanel()">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <div class="likes-panel-interests" id="likesInterests"></div>
+  <div class="likes-panel-list" id="likesList">
+    <div class="likes-empty" id="likesEmpty">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <p>No liked articles yet</p>
+      <span>Like articles to build your personalized feed</span>
+    </div>
+  </div>
+</div>
+<div class="likes-panel-backdrop" id="likesBackdrop" onclick="toggleLikesPanel()"></div>
+
+<div class="nav-hint nav-hint-top">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+  Scroll up
+</div>
+
+<div class="transition-indicator up"></div>
+<div class="transition-indicator down"></div>
+
+<div class="scroll-container" id="scrollContainer">
+  <div class="cards-wrapper" id="cardsWrapper"></div>
+</div>
+
+<div class="nav-hint nav-hint-bottom">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+  Scroll or press ↓
+</div>
+
+<div class="article-counter" id="articleCounter"></div>
+
+<div class="loader" id="loader">
+  <div class="spinner"></div>
+  <div class="loader-text">Loading articles...</div>
+</div>
+
+<script>
+// ─── PERSISTENCE ─────────────────────────────────────────────
+const storage = {
+  save() {
+    try {
+      const data = {
+        interests: recommend.interests,
+        likedTitles: recommend.likedTitles,
+        likedArticles: Array.from(state.likedArticles.values()),
+        seenIds: Array.from(recommend.seenIds).slice(-500),
+        clickedIds: Array.from(recommend.clickedIds).slice(-200),
+      };
+      localStorage.setItem('wikiscroll_data', JSON.stringify(data));
+    } catch {}
+  },
+  load() {
+    try {
+      const raw = localStorage.getItem('wikiscroll_data');
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      recommend.interests = data.interests || {};
+      recommend.likedTitles = data.likedTitles || [];
+      if (data.seenIds) {
+        data.seenIds.forEach(id => recommend.seenIds.add(id));
+      }
+      if (data.clickedIds) {
+        data.clickedIds.forEach(id => recommend.clickedIds.add(id));
+      }
+      if (data.likedArticles) {
+        data.likedArticles.forEach(a => {
+          state.likedArticles.set(a.id, a);
+          state.liked.add(a.id);
+          recommend.seenIds.add(a.id);
+          recommend.seenTitles.add(a.title);
+        });
+      }
+      return true;
+    } catch { return false; }
+  },
+};
+
+// ─── RECOMMENDATION ENGINE ───────────────────────────────────
+// Tracks user interests from liked articles via Wikipedia categories/links.
+// Serves ~70% related content, ~30% random "discovery" articles.
+
+const recommend = {
+  // Interest signals extracted from liked articles
+  interests: {},       // keyword → weight (higher = stronger signal)
+  likedTitles: [],     // titles of liked articles for "related" search
+  seenIds: new Set(),  // page IDs we've already shown — persisted
+  seenTitles: new Set(), // title-level dedup as fallback
+
+  // Extract keywords from an article's title, description, and extract
+  extractKeywords(article) {
+    const stopWords = new Set([
+      'the','a','an','is','are','was','were','be','been','being','have','has','had',
+      'do','does','did','will','would','could','should','may','might','shall','can',
+      'of','in','to','for','with','on','at','from','by','about','as','into','through',
+      'during','before','after','above','below','between','under','again','further',
+      'then','once','here','there','when','where','why','how','all','both','each',
+      'few','more','most','other','some','such','no','nor','not','only','own','same',
+      'so','than','too','very','just','because','but','and','or','if','while','that',
+      'this','it','its','he','she','they','them','his','her','their','which','who',
+      'whom','what','also','born','known','one','two','first','second','new','used',
+      'many','made','after','called','since','part','over','found','people','years',
+    ]);
+    const text = `${article.title} ${article.description} ${article.extract}`.toLowerCase();
+    const words = text.match(/[a-z]{3,}/g) || [];
+    const keywords = {};
+    words.forEach(w => {
+      if (!stopWords.has(w) && w.length > 3) {
+        keywords[w] = (keywords[w] || 0) + 1;
+      }
+    });
+    // Return top keywords sorted by frequency
+    return Object.entries(keywords)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([word]) => word);
+  },
+
+  // When user likes an article, boost its keywords in the interest profile
+  addLike(article) {
+    this.likedTitles.push(article.title);
+    const keywords = this.extractKeywords(article);
+    const titleWords = article.title.toLowerCase().match(/[a-z]{3,}/g) || [];
+    const descWords = (article.description || '').toLowerCase().match(/[a-z]{3,}/g) || [];
+
+    keywords.forEach(kw => {
+      let boost = 1;
+      if (titleWords.includes(kw)) boost = 4;
+      else if (descWords.includes(kw)) boost = 2.5;
+      this.interests[kw] = (this.interests[kw] || 0) + boost;
+    });
+
+    // Gentle decay on all interests to keep profile fresh
+    // Recent likes matter more than old ones
+    Object.keys(this.interests).forEach(k => {
+      this.interests[k] *= 0.95;
+      if (this.interests[k] < 0.3) delete this.interests[k];
+    });
+  },
+
+  // When user unlikes, reduce weight
+  removeLike(article) {
+    this.likedTitles = this.likedTitles.filter(t => t !== article.title);
+    const keywords = this.extractKeywords(article);
+    keywords.forEach(kw => {
+      if (this.interests[kw]) {
+        this.interests[kw] = Math.max(0, this.interests[kw] - 3);
+        if (this.interests[kw] < 0.3) delete this.interests[kw];
+      }
+    });
+  },
+
+  // Score how relevant an article is to user interests
+  scoreArticle(article) {
+    if (Object.keys(this.interests).length === 0) return 0;
+    const keywords = this.extractKeywords(article);
+    let score = 0;
+    let matches = 0;
+    keywords.forEach(kw => {
+      if (this.interests[kw]) {
+        score += this.interests[kw];
+        matches++;
+      }
+    });
+    // Bonus for multiple keyword matches (topic density)
+    if (matches >= 3) score *= 1.3;
+    // Bonus for having an image (more engaging)
+    if (article.image) score *= 1.15;
+    // Penalize very short extracts (stubs)
+    if (article.extract && article.extract.length < 100) score *= 0.5;
+    return score;
+  },
+
+  // Get top interest keywords for search queries
+  getTopInterests(n = 3) {
+    return Object.entries(this.interests)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, n)
+      .map(([word]) => word);
+  },
+
+  // Mild boost when user clicks to read full article (~40% of a like)
+  clickedIds: new Set(),
+  trackClick(article) {
+    if (this.clickedIds.has(article.id)) return; // only count once per article
+    this.clickedIds.add(article.id);
+    const keywords = this.extractKeywords(article);
+    const titleWords = article.title.toLowerCase().match(/[a-z]{3,}/g) || [];
+    keywords.forEach(kw => {
+      let boost = 0.4;
+      if (titleWords.includes(kw)) boost = 1.2;
+      this.interests[kw] = (this.interests[kw] || 0) + boost;
+    });
+  },
+
+  // Build varied search queries to avoid repetitive results
+  getSearchQueries() {
+    const sorted = Object.entries(this.interests).sort((a, b) => b[1] - a[1]);
+    if (sorted.length < 2) return [sorted.map(s => s[0]).join(' ')];
+    const queries = [];
+    // Primary: top 2 keywords
+    queries.push(`${sorted[0][0]} ${sorted[1][0]}`);
+    // Secondary: mix top with a mid-tier keyword for variety
+    if (sorted.length >= 4) {
+      const mid = sorted[2 + Math.floor(Math.random() * Math.min(3, sorted.length - 2))];
+      queries.push(`${sorted[0][0]} ${mid[0]}`);
+    }
+    return queries;
+  },
+};
+
+// ─── WIKIPEDIA API HELPERS ───────────────────────────────────
+
+// Fetch image license/attribution info from Wikimedia Commons
+async function fetchImageAttribution(imageUrl) {
+  try {
+    // Extract filename from the URL
+    const urlParts = imageUrl.split('/');
+    let filename = decodeURIComponent(urlParts[urlParts.length - 1]);
+    // If it's a thumbnail URL, the actual filename is second to last
+    if (imageUrl.includes('/thumb/')) {
+      filename = decodeURIComponent(urlParts[urlParts.length - 2]);
+    }
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&titles=File:${encodeURIComponent(filename)}&prop=imageinfo&iiprop=extmetadata&format=json&origin=*`
+    );
+    const data = await res.json();
+    const page = Object.values(data.query?.pages || {})[0];
+    const meta = page?.imageinfo?.[0]?.extmetadata;
+    if (!meta) return null;
+    const artist = meta.Artist?.value?.replace(/<[^>]*>/g, '').trim() || null;
+    const license = meta.LicenseShortName?.value || meta.License?.value || null;
+    const credit = meta.Credit?.value?.replace(/<[^>]*>/g, '').trim() || null;
+    return { artist, license, credit };
+  } catch { return null; }
+}
+
+// Enrich all articles with image attribution (non-blocking background task)
+async function enrichAttributions(articles) {
+  const withImages = articles.filter(a => a.image && !a.attribution);
+  if (withImages.length === 0) return;
+  await Promise.all(withImages.map(async (article) => {
+    const attr = await fetchImageAttribution(article.image);
+    if (attr) {
+      article.attribution = attr;
+      // Update the card in DOM if it exists
+      const cards = document.querySelectorAll('.card');
+      cards.forEach(card => {
+        if (card.dataset.index !== undefined && state.articles[card.dataset.index]?.id === article.id) {
+          const wrap = card.querySelector('.card-image-wrap');
+          if (wrap && !wrap.querySelector('.img-attribution')) {
+            const el = document.createElement('div');
+            el.className = 'img-attribution';
+            const parts = [];
+            if (attr.artist) parts.push(attr.artist);
+            if (attr.license) parts.push(attr.license);
+            el.textContent = parts.join(' · ') || 'Wikimedia Commons';
+            wrap.appendChild(el);
+          }
+        }
+      });
+    }
+  }));
+}
+
+async function fetchRandomArticle() {
+  try {
+    const res = await fetch('https://en.wikipedia.org/api/rest_v1/page/random/summary');
+    const data = await res.json();
+    if (!data.title || !data.pageid) return null;
+    if (recommend.seenIds.has(data.pageid) || recommend.seenTitles.has(data.title)) return null;
+    let image = data.originalimage?.source || data.thumbnail?.source || null;
+    return {
+      title: data.title,
+      extract: data.extract,
+      image: image,
+      url: data.content_urls?.desktop?.page || '#',
+      description: data.description || '',
+      id: data.pageid,
+      source: 'random',
+    };
+  } catch { return null; }
+}
+
+// Search Wikipedia for articles matching a query
+async function searchWikiArticles(query, limit = 5) {
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query)}&srlimit=${limit}&format=json&origin=*`
+    );
+    const data = await res.json();
+    const titles = (data.query?.search || []).map(r => r.title);
+    // Fetch summaries for each
+    const summaries = await Promise.all(
+      titles.map(async title => {
+        try {
+          const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+          const d = await r.json();
+          if (!d.title || !d.pageid) return null;
+          if (recommend.seenIds.has(d.pageid) || recommend.seenTitles.has(d.title)) return null;
+          return {
+            title: d.title,
+            extract: d.extract,
+            image: d.originalimage?.source || d.thumbnail?.source || null,
+            url: d.content_urls?.desktop?.page || '#',
+            description: d.description || '',
+            id: d.pageid,
+            source: 'recommended',
+          };
+        } catch { return null; }
+      })
+    );
+    return summaries.filter(Boolean);
+  } catch { return []; }
+}
+
+// Fetch articles linked from a specific article (adjacent/related)
+async function fetchLinkedArticles(title, limit = 3) {
+  try {
+    const res = await fetch(
+      `https://en.wikipedia.org/w/api.php?action=query&titles=${encodeURIComponent(title)}&prop=links&pllimit=${limit * 3}&plnamespace=0&format=json&origin=*`
+    );
+    const data = await res.json();
+    const pages = Object.values(data.query?.pages || {});
+    const links = pages[0]?.links || [];
+    // Shuffle and pick some
+    const shuffled = links.sort(() => Math.random() - 0.5).slice(0, limit);
+    const summaries = await Promise.all(
+      shuffled.map(async link => {
+        try {
+          const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(link.title)}`);
+          const d = await r.json();
+          if (!d.title || !d.pageid) return null;
+          if (recommend.seenIds.has(d.pageid) || recommend.seenTitles.has(d.title)) return null;
+          if (d.type === 'disambiguation') return null;
+          return {
+            title: d.title,
+            extract: d.extract,
+            image: d.originalimage?.source || d.thumbnail?.source || null,
+            url: d.content_urls?.desktop?.page || '#',
+            description: d.description || '',
+            id: d.pageid,
+            source: 'adjacent',
+          };
+        } catch { return null; }
+      })
+    );
+    return summaries.filter(Boolean);
+  } catch { return []; }
+}
+
+// ─── SMART ARTICLE LOADER ────────────────────────────────────
+
+// Filter out stubs and low-quality articles
+function isQualityArticle(article) {
+  if (!article) return false;
+  if (article.extract && article.extract.length < 80) return false;
+  if (article.type === 'disambiguation') return false;
+  return true;
+}
+
+async function loadSmartArticles(count = 8) {
+  const topInterests = recommend.getTopInterests(3);
+  const hasInterests = topInterests.length > 0 && recommend.likedTitles.length > 0;
+
+  let articles = [];
+
+  if (hasInterests) {
+    // ~60% related, ~40% random — slightly more discovery to avoid echo chamber
+    const relatedCount = Math.ceil(count * 0.6);
+    const randomCount = count - relatedCount;
+
+    // Split related between search-based and link-based
+    const searchCount = Math.ceil(relatedCount * 0.55);
+    const adjacentCount = relatedCount - searchCount;
+
+    // Use varied search queries to avoid same results every batch
+    const queries = recommend.getSearchQueries();
+    const searchQuery = queries[Math.floor(Math.random() * queries.length)];
+
+    // Pick a recent liked article for adjacency, bias toward recent likes
+    const recentLiked = recommend.likedTitles.slice(-5);
+    const adjacentSeed = recentLiked[Math.floor(Math.random() * recentLiked.length)];
+
+    const [searchResults, adjacentResults, randomResults] = await Promise.all([
+      searchWikiArticles(searchQuery, searchCount + 5),
+      fetchLinkedArticles(adjacentSeed, adjacentCount + 4),
+      Promise.all(Array.from({ length: randomCount + 6 }, () => fetchRandomArticle()))
+    ]);
+
+    // Filter for quality
+    const related = [...searchResults, ...adjacentResults].filter(isQualityArticle);
+    const randoms = randomResults.filter(isQualityArticle);
+
+    // Score and sort related articles
+    related.sort((a, b) => recommend.scoreArticle(b) - recommend.scoreArticle(a));
+
+    // Interleave: related content with random scattered throughout
+    // Pattern: 2 related → 1 random → 2 related → 1 random ...
+    let ri = 0, di = 0, streak = 0;
+    for (let i = 0; i < count + 4 && articles.length < count; i++) {
+      if (streak >= 2 && di < randoms.length) {
+        articles.push(randoms[di++]);
+        streak = 0;
+      } else if (ri < related.length) {
+        articles.push(related[ri++]);
+        streak++;
+      } else if (di < randoms.length) {
+        articles.push(randoms[di++]);
+        streak = 0;
+      }
+    }
+  }
+
+  // Fill remaining with random articles
+  if (articles.length < count) {
+    const fillCount = count - articles.length;
+    const extra = await Promise.all(
+      Array.from({ length: fillCount + 6 }, () => fetchRandomArticle())
+    );
+    const valid = extra.filter(isQualityArticle);
+    // Prefer ones with images
+    valid.sort((a, b) => (b.image ? 1 : 0) - (a.image ? 1 : 0));
+    articles.push(...valid.slice(0, fillCount));
+  }
+
+  // Deduplicate within this batch and mark seen immediately
+  const final = [];
+  const batchIds = new Set();
+  for (const a of articles) {
+    if (!a || !a.id) continue;
+    if (batchIds.has(a.id) || recommend.seenIds.has(a.id) || recommend.seenTitles.has(a.title)) continue;
+    batchIds.add(a.id);
+    recommend.seenIds.add(a.id);
+    recommend.seenTitles.add(a.title);
+    final.push(a);
+    if (final.length >= count) break;
+  }
+
+  // Persist seen state
+  storage.save();
+
+  return final;
+}
+
+// ─── UI / STATE ──────────────────────────────────────────────
+
+const state = {
+  articles: [],
+  currentIndex: 0,
+  isTransitioning: false,
+  liked: new Set(),
+  likedArticles: new Map(), // id → article data for persistence
+  touchStartY: 0,
+};
+
+const wrapper = document.getElementById('cardsWrapper');
+const loader = document.getElementById('loader');
+const counter = document.getElementById('articleCounter');
+
+function createCard(article, index) {
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.dataset.index = index;
+
+  const isLiked = state.liked.has(article.id);
+
+  const gradients = [
+    'linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)',
+    'linear-gradient(135deg, #2d1b69, #11998e)',
+    'linear-gradient(135deg, #1e3c72, #2a5298)',
+    'linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
+    'linear-gradient(135deg, #141e30, #243b55)',
+    'linear-gradient(135deg, #1f1c2c, #928dab)',
+    'linear-gradient(135deg, #0f2027, #203a43, #2c5364)',
+    'linear-gradient(135deg, #232526, #414345)',
+  ];
+
+  const grad = gradients[index % gradients.length];
+  const firstLetter = article.title.charAt(0).toUpperCase();
+
+  card.innerHTML = `
+    <div class="card-bg" ${article.image ? `style="background-image: url('${article.image}')"` : ''}></div>
+    <div class="card-inner">
+      <div class="card-image-wrap">
+        <div class="card-image-placeholder" style="background: ${grad}">
+          <span class="placeholder-letter">${firstLetter}</span>
+        </div>
+        ${article.image
+          ? `<img class="card-image" crossorigin="anonymous" alt="${article.title}" data-src="${article.image}">`
+          : ''
+        }
+        ${article.attribution
+          ? `<div class="img-attribution">${[article.attribution.artist, article.attribution.license].filter(Boolean).join(' · ') || 'Wikimedia Commons'}</div>`
+          : ''
+        }
+      </div>
+      <div class="card-content">
+        <div class="card-category">${article.description || 'Wikipedia Article'}</div>
+        <h2 class="card-title">${article.title}</h2>
+        <p class="card-extract">${article.extract}</p>
+        <div class="card-footer">
+          <a class="card-link" href="${article.url}" target="_blank" rel="noopener" onclick="recommend.trackClick(state.articles[${index}]); storage.save();">Read full article →</a>
+        </div>
+      </div>
+    </div>
+    <div class="side-actions">
+      <button class="action-btn ${isLiked ? 'liked' : ''}" onclick="toggleLike(${index}, this)" aria-label="Like">
+        <div class="action-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="${isLiked ? 'white' : 'none'}" stroke="white" stroke-width="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+        </div>
+        <span class="action-label">Like</span>
+      </button>
+      <button class="action-btn" onclick="shareArticle(${index})" aria-label="Share">
+        <div class="action-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/>
+            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>
+          </svg>
+        </div>
+        <span class="action-label">Share</span>
+      </button>
+      <button class="action-btn" onclick="openArticle(${index})" aria-label="Open">
+        <div class="action-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
+          </svg>
+        </div>
+        <span class="action-label">Open</span>
+      </button>
+    </div>
+  `;
+  return card;
+}
+
+function renderCards() {
+  wrapper.innerHTML = '';
+  state.articles.forEach((article, i) => {
+    wrapper.appendChild(createCard(article, i));
+  });
+  updatePosition(false);
+  updateCounter();
+  loadVisibleImages();
+  enrichAttributions(state.articles);
+}
+
+function loadVisibleImages() {
+  document.querySelectorAll('.card-image[data-src]').forEach(img => {
+    if (img.src) return;
+    const src = img.getAttribute('data-src');
+    img.onload = () => img.classList.add('loaded');
+    img.onerror = () => img.remove();
+    img.src = src;
+  });
+}
+
+function updatePosition(animate = true) {
+  wrapper.style.transition = animate ? 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+  wrapper.style.transform = `translateY(-${state.currentIndex * 100}vh)`;
+}
+
+function updateCounter() {
+  counter.textContent = `${state.currentIndex + 1}`;
+}
+
+function toggleLike(index, btn) {
+  const article = state.articles[index];
+  if (state.liked.has(article.id)) {
+    state.liked.delete(article.id);
+    state.likedArticles.delete(article.id);
+    recommend.removeLike(article);
+    btn.classList.remove('liked');
+    btn.querySelector('svg').setAttribute('fill', 'none');
+  } else {
+    state.liked.add(article.id);
+    state.likedArticles.set(article.id, {
+      id: article.id,
+      title: article.title,
+      description: article.description,
+      image: article.image,
+      url: article.url,
+      extract: article.extract,
+    });
+    recommend.addLike(article);
+    btn.classList.add('liked');
+    btn.querySelector('svg').setAttribute('fill', 'white');
+  }
+  storage.save();
+  updateLikesPanel();
+
+}
+
+function removeLikedArticle(id) {
+  const article = state.likedArticles.get(id);
+  if (!article) return;
+  state.liked.delete(id);
+  state.likedArticles.delete(id);
+  recommend.removeLike(article);
+  storage.save();
+  updateLikesPanel();
+
+  // Update card button if visible
+  state.articles.forEach((a, i) => {
+    if (a.id === id) {
+      const card = wrapper.children[i];
+      if (card) {
+        const btn = card.querySelector('.action-btn');
+        if (btn) {
+          btn.classList.remove('liked');
+          btn.querySelector('svg').setAttribute('fill', 'none');
+        }
+      }
+    }
+  });
+}
+
+
+// ─── LIKES PANEL ─────────────────────────────────────────────
+
+function toggleLikesPanel() {
+  const panel = document.getElementById('likesPanel');
+  const backdrop = document.getElementById('likesBackdrop');
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open');
+  backdrop.classList.toggle('open');
+  if (!isOpen) updateLikesPanel();
+}
+
+function updateLikesPanel() {
+  const list = document.getElementById('likesList');
+  const empty = document.getElementById('likesEmpty');
+  const interestsEl = document.getElementById('likesInterests');
+
+  const articles = Array.from(state.likedArticles.values()).reverse();
+
+  // Update interests tags
+  const topInterests = recommend.getTopInterests(8);
+  if (topInterests.length > 0) {
+    interestsEl.innerHTML = `
+      <span class="interest-tag-label">Your interests</span>
+      ${topInterests.map(kw => `<span class="interest-tag">${kw}</span>`).join('')}
+    `;
+  } else {
+    interestsEl.innerHTML = '';
+  }
+
+  if (articles.length === 0) {
+    list.innerHTML = '';
+    list.appendChild(empty.cloneNode ? createEmptyState() : empty);
+    return;
+  }
+
+  const gradients = [
+    'linear-gradient(135deg, #1a1a2e, #0f3460)',
+    'linear-gradient(135deg, #2d1b69, #11998e)',
+    'linear-gradient(135deg, #1e3c72, #2a5298)',
+    'linear-gradient(135deg, #0f0c29, #24243e)',
+  ];
+
+  list.innerHTML = articles.map((a, i) => `
+    <div class="liked-item" onclick="window.open('${a.url}', '_blank')">
+      ${a.image
+        ? `<img class="liked-item-img" src="${a.image}" alt="" onerror="this.outerHTML='<div class=\\'liked-item-placeholder\\' style=\\'background:${gradients[i % gradients.length]}\\'>${a.title.charAt(0)}</div>'">`
+        : `<div class="liked-item-placeholder" style="background:${gradients[i % gradients.length]}">${a.title.charAt(0)}</div>`
+      }
+      <div class="liked-item-info">
+        <div class="liked-item-title">${a.title}</div>
+        <div class="liked-item-desc">${a.description || 'Wikipedia Article'}</div>
+      </div>
+      <button class="liked-item-remove" onclick="event.stopPropagation(); removeLikedArticle(${a.id})" title="Remove">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+function createEmptyState() {
+  const div = document.createElement('div');
+  div.className = 'likes-empty';
+  div.innerHTML = `
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="1.5">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+    </svg>
+    <p>No liked articles yet</p>
+    <span>Like articles to build your personalized feed</span>
+  `;
+  return div;
+}
+
+function shareArticle(index) {
+  const article = state.articles[index];
+  if (navigator.share) {
+    navigator.share({ title: article.title, url: article.url });
+  } else {
+    navigator.clipboard.writeText(article.url);
+  }
+}
+
+function openArticle(index) {
+  const article = state.articles[index];
+  recommend.trackClick(article);
+  storage.save();
+  window.open(article.url, '_blank');
+}
+
+// ─── PREFETCH BUFFER ─────────────────────────────────────────
+let isFetching = false;
+
+async function ensureBuffer() {
+  if (isFetching) return;
+  const remaining = state.articles.length - state.currentIndex - 1;
+  if (remaining < 6) {
+    isFetching = true;
+    const moreArticles = await loadSmartArticles(8);
+    state.articles.push(...moreArticles);
+    moreArticles.forEach((article, i) => {
+      wrapper.appendChild(createCard(article, state.articles.length - moreArticles.length + i));
+    });
+    loadVisibleImages();
+    enrichAttributions(moreArticles);
+    isFetching = false;
+    ensureBuffer();
+  }
+}
+
+async function navigate(direction) {
+  if (state.isTransitioning) return;
+
+  const newIndex = state.currentIndex + direction;
+  if (newIndex < 0 || newIndex >= state.articles.length) return;
+
+  state.isTransitioning = true;
+  state.currentIndex = newIndex;
+
+  const indicator = document.querySelector(`.transition-indicator.${direction > 0 ? 'down' : 'up'}`);
+  indicator.classList.add('active');
+  setTimeout(() => indicator.classList.remove('active'), 400);
+
+  updatePosition(true);
+  updateCounter();
+  ensureBuffer();
+
+  setTimeout(() => { state.isTransitioning = false; }, 550);
+}
+
+// ─── INPUT HANDLERS ──────────────────────────────────────────
+
+document.addEventListener('keydown', (e) => {
+  // Close likes panel on Escape
+  if (e.key === 'Escape' && document.getElementById('likesPanel').classList.contains('open')) {
+    toggleLikesPanel();
+    return;
+  }
+  // Don't navigate while panel is open
+  if (document.getElementById('likesPanel').classList.contains('open')) return;
+
+  if (e.key === 'ArrowDown' || e.key === 'j') { e.preventDefault(); navigate(1); }
+  if (e.key === 'ArrowUp' || e.key === 'k') { e.preventDefault(); navigate(-1); }
+  if (e.key === 'l') {
+    const btn = wrapper.children[state.currentIndex]?.querySelector('.action-btn');
+    if (btn) toggleLike(state.currentIndex, btn);
+  }
+});
+
+let wheelCooldown = false;
+document.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  if (wheelCooldown) return;
+  wheelCooldown = true;
+  if (e.deltaY > 30) navigate(1);
+  else if (e.deltaY < -30) navigate(-1);
+  setTimeout(() => { wheelCooldown = false; }, 600);
+}, { passive: false });
+
+document.addEventListener('touchstart', (e) => {
+  state.touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchend', (e) => {
+  const diff = state.touchStartY - e.changedTouches[0].clientY;
+  if (Math.abs(diff) > 60) {
+    navigate(diff > 0 ? 1 : -1);
+  }
+}, { passive: true });
+
+// ─── INIT ────────────────────────────────────────────────────
+(async () => {
+  // Load persisted likes and interests
+  storage.load();
+
+
+  const articles = await loadSmartArticles(12);
+  state.articles = articles;
+  renderCards();
+  loader.classList.add('hidden');
+
+  setTimeout(() => {
+    document.querySelectorAll('.nav-hint').forEach(h => h.style.opacity = '0');
+  }, 4000);
+})();
+</script>
+</body>
+</html>
