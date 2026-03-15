@@ -67,5 +67,5 @@ Open the HTML file in a browser. That's it. No server, no build step, no install
 - No offline support. Every article is fetched live.
 - Image loading can be slow for large Wikimedia files since there's no thumbnail size negotiation -- it just takes whatever Wikipedia's API gives it.
 
-#Other
+## Other
 Wikipedia content fetched by the app is available under the Creative Commons Attribution-ShareAlike License as provided by the Wikimedia Foundation.
