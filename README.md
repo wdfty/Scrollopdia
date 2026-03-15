@@ -1,6 +1,6 @@
 # Scrollopedia
 
-A TikTok-style vertical feed for browsing Wikipedia articles. Instead of doomscrolling social media, you doomscroll through random (and eventually personalized) encyclopedia entries. Built as a single-page HTML/JS app with no frameworks or build tools.
+A TikTok-style vertical feed for browsing Wikipedia articles. Instead of doomscrolling social media, you doomscroll through random (and eventually personalized) encyclopedia entries. Built as a single-page HTML/JS app.
 
 ## What It Does
 
