@@ -57,7 +57,7 @@ External APIs used:
 
 ## Running It
 
-Open the HTML file in a browser. That's it. No server, no build step, no install. You do need an internet connection since it fetches everything from Wikipedia on the fly.
+Open the HTML file in a browser.
 
 ## Known Limitations
 
